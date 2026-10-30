@@ -1,0 +1,149 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-video me-2"></i>Vehicle Detection and Counting</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">
+                    This system detects, tracks, and counts vehicles in video footage using computer vision techniques.
+                </p>
+                
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle me-2"></i>Features:</h5>
+                    <ul>
+                        <li>Detect vehicles in video footage or camera streams</li>
+                        <li>Track vehicles across frames</li>
+                        <li>Count vehicles passing through defined areas</li>
+                        <li>Classify different vehicle types (car, truck, motorcycle, bus)</li>
+                        <li>Generate statistics and export to CSV</li>
+                    </ul>
+                </div>
+                
+                <form action="/upload" method="post" enctype="multipart/form-data" class="mt-4">
+                    <div class="mb-3">
+                        <label class="form-label"><b>Video Source</b></label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="source_type" id="file_source" value="file" checked>
+                            <label class="form-check-label" for="file_source">
+                                Upload Video File
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="source_type" id="camera_source" value="camera">
+                            <label class="form-check-label" for="camera_source">
+                                Use Camera
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="file_upload_section">
+                        <label for="video" class="form-label">Upload Video File</label>
+                        <input class="form-control" type="file" id="video" name="video" accept="video/*">
+                        <div class="form-text">Supported formats: MP4, AVI, MOV</div>
+                    </div>
+                    
+                    <div class="mb-3 d-none" id="camera_section">
+                        <label for="camera_id" class="form-label">Camera ID or URL</label>
+                        <input type="text" class="form-control" id="camera_id" name="camera_id" value="0">
+                        <div class="form-text">Use 0 for default camera, or enter URL for IP camera</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="min_area" class="form-label">Minimum Detection Area</label>
+                                <input type="range" class="form-range" id="min_area" name="min_area" min="100" max="2000" value="500">
+                                <div class="d-flex justify-content-between">
+                                    <span>Small</span>
+                                    <span id="min_area_value">500</span>
+                                    <span>Large</span>
+                                </div>
+                                <div class="form-text">Adjust to filter out small or noisy detections</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="detection_line" class="form-label">Detection Line Position</label>
+                                <input type="range" class="form-range" id="detection_line" name="detection_line" min="0.1" max="0.9" value="0.5" step="0.05">
+                                <div class="d-flex justify-content-between">
+                                    <span>Top</span>
+                                    <span id="detection_line_value">50%</span>
+                                    <span>Bottom</span>
+                                </div>
+                                <div class="form-text">Position of the counting line in the frame</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play me-2"></i>Start Processing
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5><i class="fas fa-info-circle me-2"></i>How It Works</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-cogs me-2"></i>Technologies Used</h6>
+                        <ul>
+                            <li><b>OpenCV:</b> Computer vision operations</li>
+                            <li><b>Background Subtraction:</b> Detecting moving objects</li>
+                            <li><b>Object Tracking:</b> Following vehicles across frames</li>
+                            <li><b>Classification:</b> Identifying vehicle types</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-chart-bar me-2"></i>Output</h6>
+                        <ul>
+                            <li>Real-time video with detection visualization</li>
+                            <li>Vehicle counts by type</li>
+                            <li>CSV export with timestamp and count data</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Show/hide sections based on selected source
+    document.querySelectorAll('input[name="source_type"]').forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.value === 'file') {
+                document.getElementById('file_upload_section').classList.remove('d-none');
+                document.getElementById('camera_section').classList.add('d-none');
+            } else {
+                document.getElementById('file_upload_section').classList.add('d-none');
+                document.getElementById('camera_section').classList.remove('d-none');
+            }
+        });
+    });
+    
+    // Update range slider values
+    document.getElementById('min_area').addEventListener('input', function() {
+        document.getElementById('min_area_value').textContent = this.value;
+    });
+    
+    document.getElementById('detection_line').addEventListener('input', function() {
+        const percentage = Math.round(this.value * 100);
+        document.getElementById('detection_line_value').textContent = `${percentage}%`;
+    });
+</script>
+{% endblock %}

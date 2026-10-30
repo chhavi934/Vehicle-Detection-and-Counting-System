@@ -1,0 +1,168 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4><i class="fas fa-video me-2"></i>Vehicle Detection</h4>
+                <button id="stopBtn" class="btn btn-sm btn-danger">
+                    <i class="fas fa-stop me-1"></i>Stop
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="video-container">
+                    <img src="{{ url_for('video_feed') }}" class="img-fluid w-100" alt="Video Feed">
+                </div>
+                <div class="legend p-3">
+                    <div class="d-flex flex-wrap">
+                        <div class="me-3 mb-2">
+                            <span class="legend-color" style="background-color: #0000FF;"></span>
+                            <span>Counting Line</span>
+                        </div>
+                        <div class="me-3 mb-2">
+                            <span class="legend-color" style="background-color: #00FF00;"></span>
+                            <span>Car</span>
+                        </div>
+                        <div class="me-3 mb-2">
+                            <span class="legend-color" style="background-color: #0000FF;"></span>
+                            <span>Truck</span>
+                        </div>
+                        <div class="me-3 mb-2">
+                            <span class="legend-color" style="background-color: #FF0000;"></span>
+                            <span>Motorcycle</span>
+                        </div>
+                        <div class="me-3 mb-2">
+                            <span class="legend-color" style="background-color: #FFFF00;"></span>
+                            <span>Bus</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5><i class="fas fa-chart-bar me-2"></i>Live Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="stats-container">
+                    <div class="mb-3">
+                        <h4 id="totalCount">0</h4>
+                        <p class="text-muted">Total Vehicles</p>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div id="carProgress" class="progress-bar bg-success" role="progressbar" style="width: 0%">
+                            Cars: <span id="carCount">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div id="truckProgress" class="progress-bar bg-primary" role="progressbar" style="width: 0%">
+                            Trucks: <span id="truckCount">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div id="motorcycleProgress" class="progress-bar bg-danger" role="progressbar" style="width: 0%">
+                            Motorcycles: <span id="motorcycleCount">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div id="busProgress" class="progress-bar bg-warning" role="progressbar" style="width: 0%">
+                            Buses: <span id="busCount">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6><i class="fas fa-clock me-2"></i>Processing Statistics</h6>
+                    <p>Frames processed: <span id="frameCount">0</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-download me-2"></i>Export Data</h5>
+            </div>
+            <div class="card-body">
+                <p>Download detection results in CSV format for further analysis.</p>
+                <a href="{{ url_for('download_csv') }}" class="btn btn-primary btn-block w-100">
+                    <i class="fas fa-file-csv me-2"></i>Download CSV
+                </a>
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary btn-block w-100">
+                        <i class="fas fa-home me-2"></i>Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Update statistics periodically
+    function updateStats() {
+        fetch('/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.is_processing) {
+                    // Redirect to home if processing has stopped
+                    window.location.href = '/';
+                    return;
+                }
+                
+                // Update statistics
+                const total = data.stats.total || 0;
+                const cars = data.stats.car || 0;
+                const trucks = data.stats.truck || 0;
+                const motorcycles = data.stats.motorcycle || 0;
+                const buses = data.stats.bus || 0;
+                
+                // Update counters
+                document.getElementById('totalCount').textContent = total;
+                document.getElementById('carCount').textContent = cars;
+                document.getElementById('truckCount').textContent = trucks;
+                document.getElementById('motorcycleCount').textContent = motorcycles;
+                document.getElementById('busCount').textContent = buses;
+                document.getElementById('frameCount').textContent = data.frame_count;
+                
+                // Update progress bars
+                if (total > 0) {
+                    document.getElementById('carProgress').style.width = `${(cars / total * 100)}%`;
+                    document.getElementById('truckProgress').style.width = `${(trucks / total * 100)}%`;
+                    document.getElementById('motorcycleProgress').style.width = `${(motorcycles / total * 100)}%`;
+                    document.getElementById('busProgress').style.width = `${(buses / total * 100)}%`;
+                }
+            })
+            .catch(error => console.error('Error fetching statistics:', error));
+    }
+    
+    // Update stats every second
+    const statsInterval = setInterval(updateStats, 1000);
+    
+    // Handle stop button
+    document.getElementById('stopBtn').addEventListener('click', function() {
+        fetch('/stop_processing')
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(statsInterval);
+                window.location.href = '/';
+            });
+    });
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', function() {
+        fetch('/stop_processing');
+        clearInterval(statsInterval);
+    });
+</script>
+{% endblock %}
